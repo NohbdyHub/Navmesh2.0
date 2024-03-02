@@ -16,7 +16,13 @@ public class AgentInterface : MonoBehaviour
     public Vector3 Destination
     {
         get => agent.destination;
-        set { Debug.Log(agent); agent.destination = value; }
+        set { agent.destination = value; }
+    }
+
+    public bool Stopped
+    {
+        get => agent.isStopped;
+        set { agent.isStopped = value; }
     }
 
     void Update()
