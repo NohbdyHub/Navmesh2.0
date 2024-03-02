@@ -7,6 +7,8 @@ public class AgentController : MonoBehaviour
 {
     [SerializeField]
     Path path;
+    [SerializeField]
+    PlayerWatcher watcher;
 
     AgentInterface agentInterface;
     readonly AgentMachine state = new();
@@ -15,12 +17,26 @@ public class AgentController : MonoBehaviour
     void Awake()
     {
         state.OnStateChange += HandleStateChange;
+        watcher.OnAwarenessChange += HandleAwarenessChange;
+        
         agentInterface = GetComponent<AgentInterface>();
     }
 
     void OnEnable()
     {
         state.Current = State.Patrolling;
+    }
+
+    void HandleAwarenessChange(bool visible)
+    {
+        if(visible)
+        {
+            state.Current = State.Chasing;
+        }
+        else
+        {
+            state.Current = State.Patrolling;
+        }
     }
 
     void HandleStateChange(State previous, State current)
