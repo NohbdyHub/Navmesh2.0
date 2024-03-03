@@ -1,10 +1,9 @@
 using System.Collections;
-using System.Collections.Generic;
-using UnityEditor.Search;
+using NETWORK_ENGINE;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class TankController : MonoBehaviour
+public class TankController : NetworkComponent
 {
     [SerializeField]
     InputActionAsset inputActions;
@@ -47,6 +46,7 @@ public class TankController : MonoBehaviour
         inputActions.Disable();
     }
 
+    /*
     void FixedUpdate()
     {
         rigidbody.velocity = transform.forward * move * 10;
@@ -59,6 +59,7 @@ public class TankController : MonoBehaviour
             Debug.Log("FIRE!!!");
         }
     }
+    */
 
     IEnumerator StartCooldown()
     {
@@ -67,6 +68,41 @@ public class TankController : MonoBehaviour
         offCooldown = true;
         yield break;
     }
+
+    #region Networking
+    public override IEnumerator SlowUpdate()
+    {
+        while(true)
+        {
+            rigidbody.velocity = transform.forward * move * 10;
+            rigidbody.angularVelocity = new(0f, rotation * 5, 0f);
+            if(fire && offCooldown)
+            {
+                StartCoroutine(StartCooldown());
+                var realBullet = Instantiate(bullet, eye.position, eye.rotation);
+                realBullet.GetComponent<Rigidbody>().velocity = rigidbody.velocity + (15 * eye.forward);
+                Debug.Log("FIRE!!!");
+            }
+            yield return new WaitForSeconds(0.1f);
+        }
+    }
+
+    public override void HandleMessage(string flag, string value)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    // can't be bothered to make this "Correct" but I hate the whole Find By Name thing
+    public override void NetworkedStart()
+    {
+        transform.position = GameObject.Find("Level").transform.Find("Spawn").transform.position;
+
+        foreach(var watcher in FindObjectsByType<PlayerWatcher>(FindObjectsSortMode.None))
+        {
+            watcher.player = transform;
+        }
+    }
+    #endregion
 
     #region InputHandling
     void OnMovePerformed(InputAction.CallbackContext context)

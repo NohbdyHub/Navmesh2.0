@@ -7,7 +7,7 @@ public class PlayerWatcher : MonoBehaviour
     [SerializeField]
     Transform eye;
     [SerializeField]
-    Transform player;
+    public Transform player;
 
     public delegate void HandleAwarenessChange(bool visible);
     public delegate void HandlePlayerPositionUpdate(Transform playerTransform);

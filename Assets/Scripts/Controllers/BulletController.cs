@@ -1,30 +1,51 @@
 using System.Collections;
 using System.Collections.Generic;
+using NETWORK_ENGINE;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
-public class BulletController : MonoBehaviour
+public class BulletController : NetworkComponent
 {
-    new Rigidbody rigidbody;
+    //new Rigidbody rigidbody;
 
     int bounces = 2;
 
     void OnCollisionEnter(Collision collision)
     {
-        if(collision.collider.gameObject.layer == LayerMask.NameToLayer("Enemy"))
+        if(IsServer)
         {
-            Destroy(gameObject);
-            collision.gameObject.GetComponentInParent<AgentController>().Shoot();
-        }
-        bounces--;
-        if(bounces == 0)
-        {
-            Destroy(gameObject);
+            if(collision.collider.gameObject.layer == LayerMask.NameToLayer("Enemy"))
+            {
+                SendUpdate("BALLDIE", "");
+                //Destroy(gameObject);
+                collision.transform.parent.GetComponent<AgentController>().Shoot();
+            }
+
+            bounces--;
+            if(bounces == 0)
+            {
+                SendUpdate("BALLDIE", "");
+                Destroy(gameObject);
+            }
         }
     }
 
-    void Awake()
+    public override IEnumerator SlowUpdate()
     {
-        rigidbody = GetComponent<Rigidbody>();
+        yield break;
+    }
+
+    public override void HandleMessage(string flag, string value)
+    {
+        if(flag == "BALLDIE")
+        {
+            
+        }
+        throw new System.NotImplementedException();
+    }
+
+    public override void NetworkedStart()
+    {
+        //rigidbody = GetComponent<Rigidbody>();
     }
 }
