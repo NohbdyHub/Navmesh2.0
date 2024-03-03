@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,23 +11,51 @@ public class AgentController : MonoBehaviour
     [SerializeField]
     PlayerWatcher watcher;
 
-    AgentInterface agentInterface;
     readonly AgentMachine state = new();
+    readonly Dictionary<(State, State), Action> edges = new();
+    AgentInterface agentInterface;
     Vector3 lastPatrol;
 
-    void Awake()
+/*loki*/    void Awake()
     {
         state.OnStateChange += HandleStateChange;
         watcher.OnAwarenessChange += HandleAwarenessChange;
         
+        /*Register state transitions*/
         agentInterface = GetComponent<AgentInterface>();
+        edges.Add((State.Uninitialized, State.Patrolling), () => {
+            agentInterface.OnPathReached += HandleDestinationReached;
+            agentInterface.Destination = path.Next();
+        });
+
+        edges.Add((State.Patrolling, State.Chasing), () => {
+            agentInterface.OnPathReached -= HandleDestinationReached;
+            watcher.OnPlayerPositionUpdate += HandlePlayerPositionUpdate;
+            lastPatrol = agentInterface.Destination;
+        });
+
+        edges.Add((State.Chasing, State.Patrolling), () => {
+            watcher.OnPlayerPositionUpdate -= HandlePlayerPositionUpdate;
+            agentInterface.OnPathReached += HandleDestinationReached;
+            agentInterface.Destination = lastPatrol;
+        });
+
+        edges.Add((State.Patrolling, State.Dead), () => {
+            agentInterface.OnPathReached -= HandleDestinationReached;
+            //die
+        });
+
+        edges.Add((State.Chasing, State.Dead), () => {
+            //die
+        });
     }
 
-    void OnEnable()
+    void Start()
     {
         state.Current = State.Patrolling;
     }
 
+    #region StateChanges
     void HandleAwarenessChange(bool visible)
     {
         if(visible)
@@ -41,65 +70,26 @@ public class AgentController : MonoBehaviour
 
     void HandleStateChange(State previous, State current)
     {
-        var match = (previous, current);
-        if(match == (State.Uninitialized, State.Patrolling))
+        if(edges.TryGetValue((previous, current), out Action handleEdge))
         {
-            StartPatrolling();
-        }
-        else if(match == (State.Patrolling, State.Chasing))
-        {
-            FromPatrollingToChasing();
-        }
-        else if(match == (State.Chasing, State.Patrolling))
-        {
-            FromChasingToPatrolling();
-        }
-        else if(match == (State.Patrolling, State.Dead))
-        {
-            FromPatrollingToDead();
-        }
-        else if(match == (State.Chasing, State.Dead))
-        {
-            FromChasingToDead();
+            handleEdge();
         }
         else
         {
             Debug.LogWarning($"Unknown state transition: {previous}->{current}");
         }
     }
+    #endregion
+
+    #region StateSpecific
+    void HandlePlayerPositionUpdate(Transform playerTransform)
+    {
+        agentInterface.Destination = playerTransform.position;
+    }
 
     void HandleDestinationReached()
     {
         agentInterface.Destination = path.Next();
     }
-
-    void StartPatrolling()
-    {
-        agentInterface.OnPathReached += HandleDestinationReached;
-        agentInterface.Destination = path.Next();
-    }
-
-    void FromPatrollingToChasing()
-    {
-        agentInterface.OnPathReached -= HandleDestinationReached;
-        lastPatrol = agentInterface.Destination;
-        //chase player here
-    }
-
-    void FromChasingToPatrolling()
-    {
-        agentInterface.OnPathReached += HandleDestinationReached;
-        agentInterface.Destination = lastPatrol;
-    }
-
-    void FromPatrollingToDead()
-    {
-        agentInterface.OnPathReached -= HandleDestinationReached;
-        //die
-    }
-
-    void FromChasingToDead()
-    {
-        //die
-    }   
+    #endregion
 }

@@ -8,8 +8,11 @@ public class PlayerWatcher : MonoBehaviour
     Transform eye;
     [SerializeField]
     Transform player;
+
     public delegate void HandleAwarenessChange(bool visible);
+    public delegate void HandlePlayerPositionUpdate(Transform playerTransform);
     public event HandleAwarenessChange OnAwarenessChange;
+    public event HandlePlayerPositionUpdate OnPlayerPositionUpdate;
 
     bool near = false;
     bool previousVisibility = false, currentVisibility = false;
@@ -46,6 +49,11 @@ public class PlayerWatcher : MonoBehaviour
                 Physics.Raycast(eye.position, direction, out RaycastHit hit) && 
                 hit.collider.gameObject.layer == LayerMask.NameToLayer("Player")
             ;
+
+            if(currentVisibility)
+            {
+                OnPlayerPositionUpdate?.Invoke(player);
+            }
         }
         else
         {
@@ -55,7 +63,10 @@ public class PlayerWatcher : MonoBehaviour
         //change in visibility happened
         if((!previousVisibility && currentVisibility) || (previousVisibility && !currentVisibility))
         {
+            Debug.Log((previousVisibility, currentVisibility));
             OnAwarenessChange?.Invoke(currentVisibility);
         }
+
+        previousVisibility = currentVisibility;
     }
 }
