@@ -63,7 +63,6 @@ public class PlayerWatcher : MonoBehaviour
         //change in visibility happened
         if((!previousVisibility && currentVisibility) || (previousVisibility && !currentVisibility))
         {
-            Debug.Log((previousVisibility, currentVisibility));
             OnAwarenessChange?.Invoke(currentVisibility);
         }
 

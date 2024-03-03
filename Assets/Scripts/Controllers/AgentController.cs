@@ -15,8 +15,9 @@ public class AgentController : MonoBehaviour
     readonly Dictionary<(State, State), Action> edges = new();
     AgentInterface agentInterface;
     Vector3 lastPatrol;
+    int health = 3;
 
-/*loki*/    void Awake()
+    void Awake()
     {
         state.OnStateChange += HandleStateChange;
         watcher.OnAwarenessChange += HandleAwarenessChange;
@@ -42,11 +43,12 @@ public class AgentController : MonoBehaviour
 
         edges.Add((State.Patrolling, State.Dead), () => {
             agentInterface.OnPathReached -= HandleDestinationReached;
-            //die
+            Destroy(gameObject);
         });
 
         edges.Add((State.Chasing, State.Dead), () => {
-            //die
+            watcher.OnPlayerPositionUpdate -= HandlePlayerPositionUpdate;
+            Destroy(gameObject);
         });
     }
 
@@ -55,6 +57,14 @@ public class AgentController : MonoBehaviour
         state.Current = State.Patrolling;
     }
 
+    public void Shoot()
+    {
+        health--;
+        if(health == 0)
+        {
+            state.Current = State.Dead;
+        }
+    }
     #region StateChanges
     void HandleAwarenessChange(bool visible)
     {
