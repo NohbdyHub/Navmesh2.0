@@ -55,7 +55,7 @@ public class TankController : MonoBehaviour
         {
             StartCoroutine(StartCooldown());
             var realBullet = Instantiate(bullet, eye.position, eye.rotation);
-            realBullet.GetComponent<Rigidbody>().velocity = eye.forward * (10 + rigidbody.velocity.magnitude);
+            realBullet.GetComponent<Rigidbody>().velocity = rigidbody.velocity + (15 * eye.forward);
             Debug.Log("FIRE!!!");
         }
     }

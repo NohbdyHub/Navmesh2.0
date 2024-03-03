@@ -45,7 +45,7 @@ public class PlayerWatcher : MonoBehaviour
             var direction = (player.transform.position - eye.transform.position).normalized;
             float dot = Vector3.Dot(direction, transform.forward);
             currentVisibility = 
-                dot > 0.5f && 
+                dot > 0f && 
                 Physics.Raycast(eye.position, direction, out RaycastHit hit) && 
                 hit.collider.gameObject.layer == LayerMask.NameToLayer("Player")
             ;
